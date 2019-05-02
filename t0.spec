@@ -1,33 +1,63 @@
-### RPM cms t0 2.1.4
+### RPM cms t0 2.1.5.pre1
 ## INITENV +PATH PATH %i/xbin
 ## INITENV +PATH PYTHONPATH %i/${PYTHON_LIB_SITE_PACKAGES}
 ## INITENV +PATH PYTHONPATH %i/x${PYTHON_LIB_SITE_PACKAGES}
 
 %define webdoc_files %{installroot}/%{pkgrel}/doc/
 
-Source: git://github.com/dmwm/T0.git?obj=master/%{realversion}&export=T0-%{realversion}&output=/T0-%{realversion}.tar.gz
+%define wmcver 1.2.2.pre3
+%define wmcpkg WMCore
+%define pkg T0
+
+Source0: git://github.com/vytjan/T0.git?obj=master/%{realversion}&export=T0-%{realversion}&output=/T0-%{realversion}.tar.gz
+Source1: git://github.com/dmwm/WMCore?obj=master/%wmcver&export=%{wmcpkg}_%n&output=/%{wmcpkg}_%n.tar.gz
+Patch0: wmcore_t0
+
 Requires: wmagent
 BuildRequires: py2-sphinx
 
 %prep
-%setup -n T0-%{realversion}
+%setup -c
+%setup -T -D -a 1
+%patch0 -p1 -d WMCore_t0
+#%setup -n T0-%{realversion}
 
 # setup version
 #cat src/python/T0/__init__.py | sed "s,development,%{realversion},g" > init.tmp
 #mv -f init.tmp src/python/T0/__init__.py
 
 %build
+# build T0 system from WMCore
+echo "AMR building t0 system"
+cd %{wmcpkg}_%n
+python setup.py build_system -s t0
+cd ../T0-%{realversion}
+
+# change version to proper one
+sed -i -e "s,development,%{realversion},g" src/python/T0/__init__.py
+sed -i -e "s,development,%{realversion},g" doc/sphinx/conf.py
+sed -i -e "s,development,%{realversion},g" setup.py
+
+# then build the T0
+echo "AMR and now building the T0 itself"
 python setup.py build
 
 # build T0 sphinx documentation
 PYTHONPATH=$PWD/src/python:$PYTHONPATH
 cd doc
-cat sphinx/conf.py | sed "s,development,%{realversion},g" > sphinx/conf.py.tmp
-mv sphinx/conf.py.tmp sphinx/conf.py
+#cat sphinx/conf.py | sed "s,development,%{realversion},g" > sphinx/conf.py.tmp
+#mv sphinx/conf.py.tmp sphinx/conf.py
+mkdir -p sphinx/_static
 mkdir -p build
 make html
 
 %install
+echo "AMR installing t0 system"
+cd %{wmcpkg}_%n
+python setup.py install_system -s t0 --prefix=%i
+cd ../T0-%{realversion}
+
+echo "AMR then installing the T0 itself"
 python setup.py install --prefix=%i
 find %i -name '*.egg-info' -exec rm {} \;
 
