@@ -11,11 +11,10 @@
 
 Source0: git://github.com/vytjan/T0.git?obj=master/%{realversion}&export=T0-%{realversion}&output=/T0-%{realversion}.tar.gz
 Source1: git://github.com/dmwm/WMCore?obj=master/%wmcver&export=%{wmcpkg}_%n&output=/%{wmcpkg}_%n.tar.gz
-#To be removed in the cmsdist PR
 Patch0: wmcore_t0
 
 #Requires: wmagent
-Requires: python py2-sqlalchemy py2-httplib2 py2-pycurl py2-rucio-clients
+Requires: python py2-sqlalchemy py2-httplib2 py2-pycurl py2-rucio-clients wmcore-devtools
 Requires: py2-mysqldb py2-cx-oracle py2-cheetah py2-pyOpenSSL
 Requires: cherrypy yui libuuid couchdb15 condor pystack
 Requires: dbs3-client py2-pyzmq py2-psutil py2-future py2-retry py2-stomp
@@ -28,7 +27,6 @@ BuildRequires: py2-sphinx couchskel
 %setup -T -D -a 1
 #%setup -D -T -b 1 -n T0-%{realversion}
 #%setup -T -b 0 -n WMCore-%{wmcver}
-#To be removed in the cmsdist PR
 %patch0 -p1 -d WMCore_t0
 #%setup -n T0-%{realversion}
 
@@ -38,7 +36,7 @@ BuildRequires: py2-sphinx couchskel
 
 %build
 # build T0 system from WMCore
-echo "Building t0 system"
+echo "AMR building t0 system"
 cd %{wmcpkg}_%n
 python setup.py build_system -s t0
 #PYTHONPATH=$PWD/build/lib:$PYTHONPATH
@@ -64,13 +62,13 @@ mkdir -p build
 make html
 
 %install
-echo "Installing t0 system"
+echo "AMR installing t0 system"
 cd %{wmcpkg}_%n
 python setup.py install_system -s t0 --prefix=%i
 PYTHONPATH=$PWD/build/lib:$PYTHONPATH
 cd ../T0-%{realversion}
 
-echo "Then installing the T0 itself"
+echo "AMR then installing the T0 itself"
 python setup.py install --prefix=%i
 find %i -name '*.egg-info' -exec rm {} \;
 
